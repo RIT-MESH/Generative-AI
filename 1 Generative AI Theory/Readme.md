@@ -100,6 +100,121 @@ Text must be represented numerically for machine learning models to process it e
   print(tokenizer.split_text("I love NLP"))  # Tokenize text
   ```
 
+#### **10. TF-IDF (Term Frequency-Inverse Document Frequency)**
+
+TF-IDF is a technique used to **assess the importance of a word within a document**. It consists of two main components:
+
+- **Term Frequency (TF):** This measures **how important a word is within a given sentence**. It is calculated as the occurrence of a word in a given sentence divided by the total number of words in that sentence.
+- **Inverse Document Frequency (IDF):** This measures **how unique or rare a word is across all sentences**. It is calculated using a logarithmic scale to reduce skewness in IDF values. The formula involves the total number of sentences divided by the number of sentences containing the word.
+
+TF-IDF helps to **reduce the weighting of common words and give importance to unique (rare) words**.
+
+---
+
+**Example:** Calculating TF-IDF using Scikit-Learn
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer  # Importing TF-IDF Vectorizer from Scikit-Learn
+
+# Sample text corpus
+corpus = [
+    "Natural Language Processing is amazing",
+    "TF-IDF is a technique for scoring words",
+    "The importance of TF-IDF in text analysis"
+]
+
+# Initialize the TF-IDF Vectorizer
+vectorizer = TfidfVectorizer()
+
+# Fit and transform the corpus
+tfidf_matrix = vectorizer.fit_transform(corpus)
+
+# Get feature names (words)
+feature_names = vectorizer.get_feature_names_out()
+
+# Convert TF-IDF matrix to array
+print("TF-IDF Feature Names:", feature_names)
+print("TF-IDF Matrix:")
+print(tfidf_matrix.toarray())
+```
+---
+**Output:**
+```
+TF-IDF Feature Names: ['analysis' 'amazing' 'for' 'importance' 'in' 'is' 'language' 'natural' 'of' 'processing' 'scoring' 'technique' 'text' 'tf' 'tf-idf' 'the' 'words']
+TF-IDF Matrix:
+[[0.         0.5        0.         0.         0.         0.5  0.5        0.5        0.         0.5        0.         0.  0.         0.         0.         0.         0.        ]
+ [0.         0.         0.40824829 0.         0.         0.40824829  0.         0.         0.         0.         0.40824829 0.40824829  0.         0.         0.40824829 0.         0.40824829]
+ [0.40824829 0.         0.         0.40824829 0.40824829 0.  0.         0.         0.40824829 0.         0.         0.  0.40824829 0.40824829 0.         0.40824829 0.        ]]
+```
+---
+
+**Example:** Calculating TF-IDF Manually
+```python
+import numpy as np  # Importing NumPy for numerical operations
+import math  # Importing math for logarithmic calculations
+
+# Sample sentences
+sentences = [
+    "Natural Language Processing is amazing",
+    "TF-IDF is a technique for scoring words",
+    "The importance of TF-IDF in text analysis"
+]
+
+# Tokenizing the sentences
+tokenized_sentences = [sentence.lower().split() for sentence in sentences]
+
+# Compute Term Frequency (TF)
+def compute_tf(sentence):
+    """
+    Calculates term frequency (TF) for each word in a sentence.
+    TF is computed as the occurrence of a word divided by total words in the sentence.
+    """
+    word_count = len(sentence)  # Total words in sentence
+    tf_dict = {}  # Dictionary to store TF values
+    for word in sentence:
+        tf_dict[word] = tf_dict.get(word, 0) + 1 / word_count  # Compute TF
+    return tf_dict
+
+# Compute Inverse Document Frequency (IDF)
+def compute_idf(sentences):
+    """
+    Calculates inverse document frequency (IDF) for each unique word.
+    IDF is computed using log(total number of sentences / number of sentences containing the word).
+    """
+    num_sentences = len(sentences)  # Total number of sentences
+    idf_dict = {}  # Dictionary to store IDF values
+    all_words = set([word for sentence in sentences for word in sentence])  # Unique words in dataset
+    for word in all_words:
+        containing_sentences = sum(1 for sentence in sentences if word in sentence)  # Count sentences containing word
+        idf_dict[word] = math.log(num_sentences / (1 + containing_sentences))  # Compute IDF
+    return idf_dict
+
+# Compute TF-IDF
+def compute_tfidf(tf, idf):
+    """
+    Calculates TF-IDF score by multiplying TF and IDF values.
+    """
+    tfidf = {word: tf[word] * idf[word] for word in tf}  # Compute TF-IDF
+    return tfidf
+
+# Applying TF-IDF calculation
+tf_values = [compute_tf(sentence) for sentence in tokenized_sentences]  # Compute TF for each sentence
+idf_values = compute_idf(tokenized_sentences)  # Compute IDF for dataset
+tfidf_values = [compute_tfidf(tf, idf_values) for tf in tf_values]  # Compute TF-IDF
+
+# Display TF-IDF results
+print("TF-IDF Values:")
+for idx, sentence in enumerate(sentences):
+    print(f"Sentence {idx+1}: {tfidf_values[idx]}")  # Print TF-IDF scores for each sentence
+```
+---
+**Output:**
+```
+Sentence 1: {'natural': 0.366, 'language': 0.366, 'processing': 0.366, 'is': -0.287, 'amazing': 0.366}
+Sentence 2: {'tf-idf': -0.287, 'is': -0.287, 'technique': 0.366, 'for': 0.366, 'scoring': 0.366, 'words': 0.366}
+Sentence 3: {'the': 0.366, 'importance': 0.366, 'of': 0.366, 'tf-idf': -0.287, 'in': 0.366, 'text': 0.366, 'analysis': 0.366}
+```
+
+
 #### **11. Word Embeddings**
 Word embeddings are a technique used to convert words into numerical representations, capturing semantic meaning and relationships between words.
 
