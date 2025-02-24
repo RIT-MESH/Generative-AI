@@ -1,3 +1,53 @@
+**NLP Pipeline and Model Evolution**
+
+*   The typical **NLP pipeline** consists of data ingestion, data preprocessing, model training, and model evaluation.
+*   **Data preprocessing** includes text preprocessing, text encoding, and text embedding.
+*   The evolution of NLP models has progressed significantly:
+    *   From RNN (1987), LSTM (1997), GRU (2014), and EPD (2014)
+    *   To Encoder-Decoders with attention (2016)
+    *   And then to Transformers (2017-2018), including models like BERT and GPT (2019-2020).
+
+**Transfer Learning and Fine-Tuning**
+
+*   **Transfer learning** involves applying a pre-trained model to new data.
+*   **Fine-tuning** is a transfer learning technique where a pre-trained model is loaded and further trained with new data.
+*   This can involve loading a base model and adding layers for fine-tuning.
+
+**Transformers**
+
+*   Transformers utilise **self-attention mechanisms**.
+*   They require **large amounts of data and extensive training**.
+*   Transformers are versatile and can be applied to:
+    *   Conversational AI
+    *   Text classification
+    *   Question answering
+    *   Language translation
+    *   Text summarisation.
+
+**Computer Vision**
+
+*   Key tasks in **computer vision** include:
+    *   Image classification
+    *   Object detection
+    *   Object segmentation
+    *   Object tracking
+    *   Optical Character Recognition (OCR).
+*   **Convolutional Neural Networks (CNNs)** are employed for feature extraction.
+*   Image recognition using CNNs relies on pattern recognition.
+
+**Word Embedding and Self-Attention**
+
+*   **Word embedding** represents words as vectors.
+*   **Contextual embedding** and **dynamic embedding** are types of self-attention.
+*   **Self-attention** uses query, key, and value to understand relationships between words.
+
+**Language Models (LM)**
+
+*   **Language Models** can be combined with transformers to improve text summarisation.
+*   Large Language Models (LLMs) benefit from transformers and large datasets.
+
+
+
 # Learning Architectures: RNN, CNN, and Transformers
 
 ## Recurrent Neural Networks (RNNs)
@@ -144,7 +194,7 @@ RNNs, LSTMs, and GRUs are powerful for sequential data processing, but **transfo
 👉 LSTMs/GRUs → **Better for long-term dependencies**  
 👉 Transformers → **State-of-the-art for NLP and sequence tasks**  
 
-🔗 **Want to learn more?** Explore the code, contribute, or open an issue!
+
 
 ---
 
