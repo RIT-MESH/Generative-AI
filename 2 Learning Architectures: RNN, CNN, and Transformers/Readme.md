@@ -37,7 +37,19 @@ Let's consider an example sentence:
 > **"I love AI"**  
 The hidden state updates as each word is processed.
 
-⚠️ **Limitation**: Standard RNNs struggle with **long-term dependencies**, leading to the **vanishing gradient problem**.
+⚠️ **Limitation: Vanishing Gradient Problem**
+
+### 📈 **What is the Vanishing Gradient Problem?**
+When training deep RNNs, gradients (used to update model parameters) can become extremely small as they are backpropagated through many layers. This causes:
+
+- **Slow or no learning**: The weights of earlier layers do not get updated significantly.
+- **Loss of long-term dependencies**: The network fails to remember information from the beginning of a long sequence.
+- **Difficulty in training deep networks**: Deep RNNs become ineffective due to poor gradient flow.
+
+### ✅ **Solutions to Vanishing Gradient Problem**
+- **Long Short-Term Memory (LSTM) Networks** → Introduce gates that regulate the flow of information.
+- **Gated Recurrent Units (GRUs)** → A simpler alternative to LSTMs that also address vanishing gradients.
+- **Use of Batch Normalization** → Helps stabilize and speed up training.
 
 ---
 
