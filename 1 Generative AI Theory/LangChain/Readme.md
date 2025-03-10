@@ -44,6 +44,8 @@ LangChain makes it easier to combine LLMs with other tools, data sources, and wo
 
 
 ##  How It Works Step-by-Step
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/LangChain/LANGCHAIN.png?raw=true"alt="Sublime's custom image"/>
+</p>
 
 ### Step 1: Define the Task
 You start by defining what you want the application to do. For example:
