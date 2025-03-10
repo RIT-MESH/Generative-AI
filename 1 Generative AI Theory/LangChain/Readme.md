@@ -2,6 +2,13 @@ LangChain is a framework designed to help developers build applications that lev
 
 Here’s a simple but deep explanation of what LangChain does and why it’s useful:
 
+## 🎧 Listen to the LangChain Guide Audio
+
+[🔊 Click here to listen](https://rit-mesh.github.io/Generative-AI/1%20Generative%20AI%20Theory/LangChain/audio.html)
+
+
+
+
 ---
 ### **Why Use LangChain?**
 - **Efficiency**: It saves time by providing pre-built components for common tasks.
