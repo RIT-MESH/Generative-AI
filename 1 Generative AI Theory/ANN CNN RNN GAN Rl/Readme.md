@@ -11,7 +11,9 @@ An Artificial Neural Network (ANN) consists of:
 3. **Loss Calculation**: Compare the network’s output with the true output using a loss function.
 4. **Backpropagation**: Compute gradients and update weights using optimization techniques like SGD or Adam.
 5. **Iteration & Training**: Repeat steps 2-4 over multiple epochs until optimal performance is achieved.
-
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/ANN%20CNN%20RNN%20GAN%20Rl/ann.png?raw=true"alt="Sublime's custom image" width="900"/>
+ </p>
+ 
 ### Applications
 - **Healthcare**: Disease detection from medical images, patient risk prediction.
 - **Finance**: Credit scoring, fraud detection, and stock price prediction.
@@ -32,6 +34,8 @@ CNNs specialize in processing structured grid-like data, mainly images.
 5. **Flattening**: Converts the pooled feature map into a single vector.
 6. **Fully Connected Layers**: Processes the features for final classification.
 7. **Softmax/Output Layer**: Produces probabilities for classification labels.
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/ANN%20CNN%20RNN%20GAN%20Rl/cnn.png?raw=true"alt="Sublime's custom image" width="900"/>
+ </p>
 
 ### Applications
 - **Medical Imaging**: Tumor detection in MRI, CT scans, and X-rays.
@@ -52,6 +56,9 @@ RNNs are designed for sequential data by maintaining an internal state (memory) 
 3. **Recurrent Processing**: Each input step influences future computations.
 4. **Final Prediction**: The last hidden state is used to generate an output.
 5. **Backpropagation Through Time (BPTT)**: Gradients are computed and weights are updated to improve predictions.
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/ANN%20CNN%20RNN%20GAN%20Rl/rnn.png?raw=true"alt="Sublime's custom image" width="900"/>
+ </p>
+   
 
 ### Applications
 - **Natural Language Processing (NLP)**: Sentiment analysis, text generation, machine translation, chatbots.
@@ -76,6 +83,9 @@ GANs consist of two neural networks:
 4. **Loss Computation**: The difference between predictions and actual labels is measured.
 5. **Backpropagation**: Generator improves by reducing the ability of the discriminator to distinguish real from fake data.
 6. **Repeat Until Convergence**: Both networks continue learning until the generated data is indistinguishable from real data.
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/ANN%20CNN%20RNN%20GAN%20Rl/gan.png?raw=true"alt="Sublime's custom image" width="900"/>
+ </p>
+
 
 ### Applications
 - **Image Generation**: Creating realistic human faces (e.g., StyleGAN), AI-generated art.
@@ -102,6 +112,9 @@ GANs consist of two neural networks:
 4. **Receive Reward**: The environment provides feedback (positive/negative reward).
 5. **Update Policy**: The agent updates its decision-making strategy based on rewards.
 6. **Repeat**: The process continues until the agent learns an optimal policy.
+<p align="center"><img src="https://github.com/RIT-MESH/Generative-AI/blob/main/1%20Generative%20AI%20Theory/ANN%20CNN%20RNN%20GAN%20Rl/rl.png?raw=true"alt="Sublime's custom image" width="900"/>
+ </p>
+
 
 ### Applications
 - **Gaming**: AI systems mastering complex games (e.g., AlphaGo, OpenAI Five, Dota 2, StarCraft II bots).
