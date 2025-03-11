@@ -124,5 +124,21 @@ GANs consist of two neural networks:
 - **Autonomous Vehicles**: RL-based driving policies, adaptive traffic signal control.
 - **Smart Cities & IoT**: Energy-efficient HVAC systems, smart grid optimization, and supply chain logistics.
 
+---
+### Artificial Neural Network (ANN), Convolutional Neural Network (CNN), Recurrent Neural Network (RNN), Generative Adversarial Network (GAN), and Reinforcement Learning (RL) Comparison Table
+
+| Feature                | ANN (Artificial Neural Network) | CNN (Convolutional Neural Network) | RNN (Recurrent Neural Network) | GAN (Generative Adversarial Network) | RL (Reinforcement Learning) |
+|------------------------|--------------------------------|-----------------------------------|--------------------------------|--------------------------------------|-----------------------------|
+| **Purpose**            | General pattern recognition and learning from data | Image and spatial data processing | Sequential data processing | Data generation (images, text, etc.) | Learning decision-making in dynamic environments |
+| **Data Type**          | Structured & unstructured data | Grid-like data (images, videos) | Sequential data (text, speech, time-series) | Any data (images, audio, video, text) | Interaction-based data from an environment |
+| **Architecture**       | Fully connected layers (input, hidden, output) | Convolutional & pooling layers | Recurrent layers maintaining hidden states | Generator-Discriminator network | Agent, environment, reward, policy |
+| **Key Operations**     | Weighted sum, activation, backpropagation | Convolution, pooling, fully connected layers | Recurrence, memory states, sequence processing | Adversarial training between generator and discriminator | Action selection, reward optimization, policy improvement |
+| **Training Method**    | Backpropagation and gradient descent | Backpropagation with convolutional feature learning | Backpropagation Through Time (BPTT) | Minimax optimization (adversarial training) | Trial-and-error learning with rewards |
+| **Strengths**         | Versatile, general-purpose learning | Excellent for feature extraction in images | Captures sequential dependencies | Generates realistic synthetic data | Learns optimal policies for decision-making |
+| **Weaknesses**        | Prone to overfitting, requires large datasets | Computationally expensive, requires large labeled datasets | Vanishing gradient problem (solved by LSTM/GRU) | Training instability, mode collapse | High training time, requires many interactions |
+| **Applications**      | Medical diagnosis, finance, marketing | Object detection, medical imaging, self-driving cars | Speech recognition, machine translation, stock prediction | Deepfake generation, artistic content, medical data synthesis | Gaming AI, robotics, autonomous driving, finance |
+
 Each of these deep learning paradigms plays a crucial role in advancing AI across industries, often complementing one another in complex real-world applications.
+
+
 
