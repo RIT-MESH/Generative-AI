@@ -113,7 +113,13 @@ Amazon Comprehend uses Natural Language Processing (NLP) to analyze and categori
 
 ## Implementing Fraud Detection Models in AWS
 
-### **Step-by-Step Process:**
+### **Theory**
+Fraud detection involves identifying anomalies in financial transactions, user behavior, or network activities. It requires:
+- **Historical Transaction Analysis**: Learning patterns from past legitimate and fraudulent activities.
+- **Anomaly Detection**: Identifying rare or unusual behaviors.
+- **Machine Learning Models**: Decision trees, random forests, or deep learning approaches.
+
+#### **Step-by-Step Process:**
 1. **Ingest Data from Multiple Sources:**
    - Use Amazon Kinesis or AWS Glue to process streaming transaction data.
    - Store historical transaction logs in Amazon S3.
@@ -131,18 +137,16 @@ Amazon Comprehend uses Natural Language Processing (NLP) to analyze and categori
    ```
    - Connect to Amazon Fraud Detector for automated fraud detection pipelines.
 
-### **Theory**
-Fraud detection involves identifying anomalies in financial transactions, user behavior, or network activities. It requires:
-- **Historical Transaction Analysis**: Learning patterns from past legitimate and fraudulent activities.
-- **Anomaly Detection**: Identifying rare or unusual behaviors.
-- **Machine Learning Models**: Decision trees, random forests, or deep learning approaches.
-
-### **Step-by-Step Process:**
-(Existing content remains unchanged)
-
 ---
 
 ## Real-World Example: Predicting House Prices with SageMaker
+
+
+### **Theory**
+House price prediction is a regression problem where the model estimates property values based on historical data. Important factors include:
+- **Location Features**: City, neighborhood, school ratings.
+- **Property Characteristics**: Square footage, number of bedrooms, age of the house.
+- **Market Trends**: Interest rates, economic conditions, supply & demand.
 
 ### **Step-by-Step Process:**
 1. **Data Collection:**
@@ -171,16 +175,6 @@ Fraud detection involves identifying anomalies in financial transactions, user b
    ```
 5. **Evaluate Model Performance:**
    - Compute RMSE and MAE for accuracy assessment.
-
-### **Theory**
-House price prediction is a regression problem where the model estimates property values based on historical data. Important factors include:
-- **Location Features**: City, neighborhood, school ratings.
-- **Property Characteristics**: Square footage, number of bedrooms, age of the house.
-- **Market Trends**: Interest rates, economic conditions, supply & demand.
-
-### **Step-by-Step Process:**
-(Existing content remains unchanged)
-
 ---
 
 ### **Conclusion**
