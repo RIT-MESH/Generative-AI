@@ -199,5 +199,4 @@ Listeners check for connection requests and forward them based on defined rules.
 
 ---
 
-This update includes **topic 6 (Target Groups & Listeners), detailed steps for topics 7 to 11, and improved procedures for topic 12**. 🚀
 
