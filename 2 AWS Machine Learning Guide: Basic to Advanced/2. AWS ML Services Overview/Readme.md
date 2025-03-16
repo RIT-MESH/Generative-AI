@@ -142,6 +142,75 @@ Amazon Personalize builds real-time, personalized recommendation systems.
 
 ---
 
+## 8. AWS Deep Learning AMIs – Preconfigured ML Environments
+AWS Deep Learning AMIs provide preconfigured environments for ML with popular deep learning frameworks.
+
+### **Step-by-Step Process:**
+1. **Launch a Deep Learning AMI Instance:**
+   - Choose an appropriate AMI with TensorFlow, PyTorch, or MXNet pre-installed.
+   - Configure GPU instances for deep learning model training.
+2. **Develop and Train Models:**
+   - Use Jupyter notebooks for model development.
+   - Train models using distributed training frameworks like Horovod.
+3. **Deploy Trained Models:**
+   - Deploy trained models using Amazon SageMaker or AWS Lambda.
+4. **API Usage:**
+   - Use EC2 APIs to launch and manage AMIs.
+   - Call `CreateInstance` API to provision an instance.
+
+---
+
+## 9. AWS Glue – Data Preparation and ETL
+AWS Glue automates data extraction, transformation, and loading (ETL) for ML workflows.
+
+### **Step-by-Step Process:**
+1. **Catalog Data:**
+   - Use AWS Glue Data Catalog to register data sources.
+   - Define metadata for structured and semi-structured data.
+2. **Create ETL Jobs:**
+   - Write ETL scripts using PySpark or Scala.
+   - Define transformations such as joins, aggregations, and data cleaning.
+3. **Execute and Store Results:**
+   - Run ETL jobs and store processed data in Amazon S3, Redshift, or DynamoDB.
+4. **API Usage:**
+   - Use `CreateJob`, `StartJobRun`, and `GetJobRun` APIs to manage ETL jobs.
+
+---
+
+## 10. Amazon Kinesis – Real-time Streaming Data for ML
+Amazon Kinesis enables real-time data ingestion and processing for ML applications.
+
+### **Step-by-Step Process:**
+1. **Set Up Data Streams:**
+   - Create Kinesis data streams to ingest real-time data.
+2. **Process Data in Real Time:**
+   - Use AWS Lambda or Kinesis Analytics to analyze incoming data.
+   - Aggregate and filter data before storage.
+3. **Store and Use Data:**
+   - Store processed data in Amazon S3, Redshift, or DynamoDB for ML training.
+4. **API Usage:**
+   - Use `PutRecord` and `GetRecords` APIs to ingest and retrieve data.
+   - Use `StartStreamEncryption` API to secure streams.
+
+---
+
+## 11. AWS Data Wrangler – Data Preprocessing for ML
+AWS Data Wrangler simplifies data preprocessing and integration with ML services.
+
+### **Step-by-Step Process:**
+1. **Connect to Data Sources:**
+   - Extract data from S3, Redshift, RDS, or local databases.
+2. **Perform Data Cleaning & Transformation:**
+   - Handle missing values, normalize data, and apply feature engineering techniques.
+3. **Export Data for ML Models:**
+   - Store processed data in Amazon S3 for training in SageMaker.
+4. **API Usage:**
+   - Use `wr.s3.read_csv()` and `wr.s3.to_parquet()` to process and store data.
+   - Call `wr.redshift.read_sql_query()` to fetch data from Redshift.
+
+---
+
 ### **Conclusion**
 AWS ML services streamline machine learning workflows from data preprocessing to model deployment. Businesses can leverage these services to develop scalable, cost-effective ML solutions.
+
 
