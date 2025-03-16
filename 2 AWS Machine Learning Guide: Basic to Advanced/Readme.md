@@ -1,5 +1,8 @@
-# **AWS Machine Learning Guide: Basic to Advanced**
 
+
+![Screenshot 2025-03-16 152040](https://github.com/user-attachments/assets/508caa39-4611-487a-b15f-2893e77c3f54)
+
+# **AWS Machine Learning Guide: Basic to Advanced**
 ## **1. Introduction to AWS Machine Learning**
 - What is AWS Machine Learning?
 - Advantages of AWS for ML
