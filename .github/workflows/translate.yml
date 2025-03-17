@@ -10,41 +10,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Python and Requests Library
+      - name: Install Google Translate CLI (`translate-shell`)
         run: |
           sudo apt update
-          sudo apt install python3-pip
-          pip install requests
+          sudo apt install -y translate-shell
 
-      - name: Translate Markdown and YAML Files with DeepL API
-        env:
-          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+      - name: Verify `translate-shell` Installation
         run: |
-          python3 <<EOF
-          import os, glob, requests
+          trans -V
 
-          API_URL = "https://api-free.deepl.com/v2/translate"
-          HEADERS = {"Authorization": f"DeepL-Auth-Key {os.getenv('DEEPL_API_KEY')}"}
-
-          def translate_text(text):
-              response = requests.post(API_URL, data={"text": text, "target_lang": "JA"}, headers=HEADERS)
-              return response.json()["translations"][0]["text"] if "translations" in response.json() else text
-
-          for file_path in glob.glob("**/*.md", recursive=True) + glob.glob("**/*.yml", recursive=True):
-              with open(file_path, "r", encoding="utf-8") as f:
-                  text = f.read()
-
-              translated_text = translate_text(text)
-
-              new_file_path = file_path.replace(".md", ".ja.md").replace(".yml", ".ja.yml")
-              with open(new_file_path, "w", encoding="utf-8") as f:
-                  f.write(translated_text)
-          EOF
-
-      - name: Commit and Push Translations
+      - name: Translate Markdown and YAML Files
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add .
-          git commit -m "Added Japanese translations using DeepL API"
-          git push
+          mkdir -p translated  # Create folder for translated files
+
+          # Retry function to handle connection timeouts
+          translate_file() {
+            local file=$1
+            local translated_file="translated/${file%.md}.ja.md"
+            local retries=5
+            local count=0
+            local success=false
+
+            while [ $count -lt $retries ]; do
+              if trans -b :ja < "$file" > "$translated_file"; then
+                success=true
+                break
+              fi
+              count=$((count + 1))
+              echo "Retrying translation ($count/$retries)..."
+              sleep 5
+            done
+
+            if [ "$success" = false ]; then
+              echo "Translation failed for $file after $retries attempts."
+            fi
+          }
+
+          
