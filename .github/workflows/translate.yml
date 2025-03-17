@@ -10,19 +10,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Google Translate CLI
+      - name: Install Google Translate CLI (`translate-shell`)
         run: |
           sudo apt update
-          sudo apt install translate-shell
+          sudo apt install -y translate-shell
 
-      - name: Translate all Markdown and YAML files
+      - name: Verify `translate-shell` Installation
         run: |
-          find . -type f \( -name "*.md" -o -name "*.yml" -o -name "*.yaml" \) -exec bash -c 'cat "$1" | trans -b :ja > "${1%.md}.ja.md"' _ {} \;
+          trans -V
 
-      - name: Commit and push changes
+      - name: Translate Markdown and YAML Files
+        run: |
+          # Define a function to retry translation in case of failure
+          translate_file() {
+            local file=$1
+            local translated_file="${file%.md}.ja.md"
+            local retries=5
+            local count=0
+            local success=false
+            
+            while [ $count -lt $retries ]; do
+              if trans -b :ja < "$file" > "$translated_file"; then
+                success=true
+                break
+              fi
+              count=$((count + 1))
+              echo "Retrying translation ($count/$retries)..."
+              sleep 5
+            done
+
+            if [ "$success" = false ]; then
+              echo "Translation failed for $file after $retries attempts."
+            fi
+          }
+
+          export -f translate_file
+          
+          # Find all markdown and YAML files and translate them
+          find . -type f \( -name "*.md" -o -name "*.yml" -o -name "*.yaml" \) -exec bash -c 'translate_file "$0"' {} \;
+
+      - name: Commit and Push Translations
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add .
-          git commit -m "Added Japanese translations"
+          git commit -m "Added Japanese translations using `translate-shell`"
           git push
