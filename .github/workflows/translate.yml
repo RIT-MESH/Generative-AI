@@ -46,4 +46,20 @@ jobs:
             fi
           }
 
+          export -f translate_file
           
+          # Find all markdown and YAML files and translate them
+          find . -type f \( -name "*.md" -o -name "*.yml" \) | while read file; do
+            translate_file "$file"
+          done
+
+      - name: Commit and Push Translations
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
+          git add .
+          git commit -m "Added Japanese translations using `translate-shell`" || echo "No changes to commit"
+          git push origin main || echo "Push failed, retrying..." && sleep 5 && git push origin main
