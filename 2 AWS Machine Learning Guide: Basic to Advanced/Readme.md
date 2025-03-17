@@ -1,5 +1,5 @@
-🌍 **Translate this page:**  
-- 🇯🇵 [日本語で読む (Google翻訳)](https://translate.google.com/translate?hl=ja&sl=auto&u=https://github.com/RIT-MESH/Generative-AI)
+
+
 
 ![Screenshot 2025-03-16 152040](https://github.com/user-attachments/assets/508caa39-4611-487a-b15f-2893e77c3f54)
 
