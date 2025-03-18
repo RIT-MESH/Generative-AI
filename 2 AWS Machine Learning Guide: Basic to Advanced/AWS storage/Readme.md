@@ -139,6 +139,19 @@ AWS offers a variety of storage services designed to meet different use cases, i
 
 6. AWS Storage Comparison Table
 
+| AWS Storage Service | Type | Use Case | When to Use |
+|--------------------|------|----------|-------------|
+| Amazon S3 | Object Storage | Data lakes, backups, content distribution | When scalable, durable, and cost-effective storage is needed |
+| S3 Glacier | Object Storage | Archival storage | For long-term, infrequent access storage |
+| Amazon EBS | Block Storage | EC2 instance storage | When low-latency, high-performance storage is required for applications |
+| AWS Instance Store | Block Storage | Temporary high-speed storage | When fast, ephemeral storage is needed for workloads like caching |
+| Amazon EFS | File Storage | Shared file storage | For workloads requiring shared file systems across multiple instances |
+| Amazon FSx | File Storage | Enterprise applications | When Windows, Lustre, or ONTAP-based file storage is needed |
+| AWS Storage Gateway | Hybrid Storage | On-premises/cloud integration | When extending on-premises storage to AWS |
+| AWS Snow Family | Hybrid Storage | Large-scale data migration | When transferring data without relying on network bandwidth |
+| AWS Backup | Backup | Automated backups | When centralized backup management is needed |
+| AWS DRS | Disaster Recovery | Business continuity | When continuous replication is required for disaster recovery |
+
 ---
 
 This guide provides a comprehensive overview of AWS storage services. Let me know if you need detailed comparisons, pricing insights, or architectural best practices!
