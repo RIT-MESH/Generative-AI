@@ -1,7 +1,3 @@
-Here's your updated **project documentation** with **“NextWork” replaced by “AWS Security”**, as your bot is focused on that domain:
-
----
-
 # 📘 Project Documentation: RAG Chatbot API for AWS Security using Amazon Bedrock
 
 ## 🧠 Project Goal
