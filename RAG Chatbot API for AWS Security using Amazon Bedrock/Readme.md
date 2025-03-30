@@ -57,8 +57,18 @@ To build a Retrieval-Augmented Generation (RAG) chatbot using **Amazon Bedrock**
   What is AWS Security?
   ```
 
-### 6. **Cloned and Ran FastAPI Server**
-- Created and activated a virtual environment.
+### 6. ** FastAPI Server**
+- Created a virtual environment
+  ```
+  python -m venv venv
+
+  ```
+-  activate a virtual environment
+  
+  ```
+   .\venv\Scripts\activate
+ 
+  ```
 - Installed dependencies using `pip install -r requirements.txt`
 - Created `.env` file with:
   ```
