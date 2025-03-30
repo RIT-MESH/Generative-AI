@@ -58,13 +58,12 @@ To build a Retrieval-Augmented Generation (RAG) chatbot using **Amazon Bedrock**
   ```
 
 ### 6. **Cloned and Ran FastAPI Server**
-- Cloned the GitHub repo: `https://github.com/NatNextWork1/nextwork-rag-api`
 - Created and activated a virtual environment.
 - Installed dependencies using `pip install -r requirements.txt`
 - Created `.env` file with:
   ```
   AWS_REGION=us-east-2
-  KNOWLEDGE_BASE_ID=2UXNKTNUUY
+  KNOWLEDGE_BASE_ID=xxxxxxxxxx
   MODEL_ARN=arn:aws:bedrock:us-east-2::foundation-model/meta.llama3-1-70b-instruct-v1:0
   ```
 
