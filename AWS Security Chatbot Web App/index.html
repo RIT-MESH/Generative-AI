@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AWS Security Chatbot</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #chat-container {
+      width: 400px;
+      background-color: #161b22;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    #chat-box {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #21262d;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    #controls {
+      display: flex;
+      gap: 5px;
+    }
+    #user-input {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    #send-btn, #clear-btn {
+      width: 48%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    #send-btn {
+      background-color: #238636;
+      color: white;
+    }
+    #clear-btn {
+      background-color: #da3633;
+      color: white;
+    }
+    .message {
+      margin: 5px 0;
+    }
+    .user { color: #58a6ff; }
+    .bot { color: #8b949e; }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Ask me about AWS security..." />
+    <div id="controls">
+      <button id="send-btn" onclick="sendMessage()">Send</button>
+      <button id="clear-btn" onclick="clearChat()">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const chatBox = document.getElementById("chat-box");
+      const userText = input.value.trim();
+
+      if (!userText) return;
+
+      chatBox.innerHTML += `<div class='message user'><strong>You:</strong> ${userText}</div>`;
+      input.value = "";
+
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/bedrock/query?text=${encodeURIComponent(userText)}`);
+        const data = await response.json();
+        const formattedText = data.response
+          .replace(/\n/g, "<br>")
+          .replace(/\. /g, ".<br><br>");
+        chatBox.innerHTML += `<div class='message bot'><strong>Bot:</strong><br>${formattedText}</div>`;
+      } catch (error) {
+        chatBox.innerHTML += `<div class='message bot'><strong>Bot:</strong> Error fetching response.</div>`;
+      }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function clearChat() {
+      document.getElementById("chat-box").innerHTML = '';
+    }
+
+    document.getElementById("user-input").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
