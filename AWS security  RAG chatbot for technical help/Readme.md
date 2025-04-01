@@ -39,13 +39,13 @@ In this project, you will:
 3. Click **Create** > **Knowledge Base with vector store**.
 
 ### 2.2 Configure Knowledge Base
-1. Name: `nextwork-rag-documentation`
+1. Name: `AWS-security-rag-documentation`
 2. Description: `This Knowledge Base stores all documentation at NextWork.`
 3. IAM Role: Select **Create and use a new service role**.
 
 ### 2.3 Choose Data Source
 1. Select **Amazon S3** as the data source.
-2. Data Source Name: `s3-bucket-nextwork-rag-documentation`
+2. Data Source Name: `s3-bucket-AWS-Security-rag-documentation`
 3. Location: **This AWS account**
 4. Click **Browse S3**, select your bucket.
 5. Click **Choose**.
