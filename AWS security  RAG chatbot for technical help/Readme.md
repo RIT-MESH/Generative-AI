@@ -18,7 +18,7 @@ In this project, you will:
 1. Go to the AWS Console and switch to region **Ohio (us-east-2)**.
 2. In the AWS search bar, type **S3** and click on **S3**.
 3. Click **Create bucket**.
-4. Bucket name: `nextwork-rag-docs-<your-initials>`
+4. Bucket name: `S3-AWS-Security-rag-docs`
 5. Leave **ACLs disabled** and **Block all public access** checked.
 6. Leave encryption settings as default.
 7. Click **Create bucket**.
