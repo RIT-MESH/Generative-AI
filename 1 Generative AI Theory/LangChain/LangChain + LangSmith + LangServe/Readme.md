@@ -1,4 +1,4 @@
-## 🚀 LangChain + LangSmith + LangServe Quickstart Guide (with AWS DevOps Humor)
+## 🚀 LangChain + LangSmith + LangServe Quickstart Guide (with AWS DevOps Humor & Explanations)
 
 ### ✅ Prerequisites
 
@@ -26,7 +26,7 @@ pip install langchain langsmith langserve openai
 
 ### 🔧 Step 2: Set Up LangChain Components
 
-#### A. Custom Prompt Template for AWS DevOps / Security
+#### A. Custom Prompt Template (with Joke + Explanation)
 
 ```python
 from langchain_core.prompts import PromptTemplate
@@ -34,7 +34,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 
 prompt = PromptTemplate.from_template(
-    "You're a cloud security expert with a sense of humor. Tell a security joke about {topic}."
+    "You're a cloud security expert with a sense of humor. Tell a short joke about {topic}, then explain why it's funny."
 )
 llm = ChatOpenAI(model="gpt-3.5-turbo")
 parser = StrOutputParser()
@@ -52,11 +52,17 @@ response = chain.invoke({"topic": "IAM policies"})
 print(response)
 ```
 
+**Example Output:**
+> **Joke:** Why did the developer get locked out of production?  
+> Because they finally fixed that overly permissive IAM policy!  
+>  
+> **Explanation:** IAM policies define what users can and can't do. Overly permissive ones are risky, but once tightened, users may lose access they relied on — hence, “locked out.”
+
 ---
 
 ### 📊 Step 3: Trace with LangSmith
 
-#### A. Set environment variables (you can add these to `.env` or your terminal):
+#### A. Set environment variables:
 ```bash
 export LANGCHAIN_API_KEY=your_langsmith_api_key
 export LANGCHAIN_TRACING_V2=true
@@ -70,13 +76,11 @@ set LANGCHAIN_TRACING_V2=true
 set LANGCHAIN_PROJECT=quickstart
 ```
 
-Now all runs using `chain.invoke()` will be traced and visible in your LangSmith dashboard!
-
 ---
 
 ### 🌐 Step 4: Serve with LangServe
 
-#### A. Create a `main.py`:
+#### A. `main.py` for LangServe:
 ```python
 from fastapi import FastAPI
 from langserve import add_routes
@@ -85,7 +89,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 
 prompt = PromptTemplate.from_template(
-    "You're a cloud security expert with a sense of humor. Tell a security joke about {topic}."
+    "You're a cloud security expert with a sense of humor. Tell a short joke about {topic}, then explain why it's funny."
 )
 llm = ChatOpenAI(model="gpt-3.5-turbo")
 parser = StrOutputParser()
@@ -94,19 +98,14 @@ app = FastAPI()
 add_routes(app, prompt | llm | parser, path="/joke")
 ```
 
-#### B. Start the server:
+#### B. Run your server:
 ```bash
 uvicorn main:app --reload
 ```
 
-#### C. Access via browser or curl:
+#### C. Test the endpoint:
 ```bash
-http://localhost:8000/joke/invoke
-```
-
-Example POST body:
-```json
-{"input": {"topic": "AWS security groups"}}
+curl -X POST http://localhost:8000/joke/invoke -H "Content-Type: application/json" -d "{\"input\": {\"topic\": \"EC2 security groups\"}}"
 ```
 
 ---
@@ -114,8 +113,8 @@ Example POST body:
 ### ✅ Summary
 
 You now have:
-- A **LangChain** app with a custom cloud security humor prompt
-- Live **LangSmith** tracing
-- A running **LangServe** API locally
+- A LangChain app using a **humorous cloud security expert**
+- **LangSmith tracing** enabled
+- A **LangServe API** you can call from anywhere
 
 ---
