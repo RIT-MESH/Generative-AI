@@ -2,6 +2,8 @@
 
 ## Overview
 
+
+
 The **Medical Reports Chatbot** is a web-based application built using Streamlit, designed to allow users to access their medical records and interact with a medical expert chatbot. The chatbot provides information about past procedures, doctor reports, test results, and symptom clarifications based on the user's medical records. The application supports bilingual interaction: users can communicate in English or Japanese, and the chatbot responds in the same language as the input.
 
 ### Key Features
@@ -10,6 +12,11 @@ The **Medical Reports Chatbot** is a web-based application built using Streamlit
 - **Bilingual Chatbot**: The chatbot responds in the same language as the user's input (English or Japanese) using prompt engineering and few-shot examples.
 - **Custom Styling**: The application uses a dark theme with green buttons for a modern look.
 - **Chat Interface**: A user-friendly chat interface displays conversation history with distinct styling for user and bot messages.
+
+  <p align="center">
+  <img src="https://github.com/user-attachments/assets/eb9a001e-5170-41c0-a261-61c4b7e058f6" alt="Screenshot 1" width="500" height="400"/>
+  <img src="https://github.com/user-attachments/assets/2821ec12-936f-4a94-8636-b1b746549aab" alt="Screenshot 2" width="500" height="400"/>
+</p>
 
 ## Prerequisites
 
