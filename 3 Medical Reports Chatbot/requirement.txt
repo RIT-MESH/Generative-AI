@@ -1,0 +1,13 @@
+streamlit
+streamlit-chat
+langchain
+langchain-community
+langchain-core
+langchain-groq
+langchain-huggingface
+openai
+tiktoken
+emoji
+python-dotenv
+sqlalchemy
+groq
