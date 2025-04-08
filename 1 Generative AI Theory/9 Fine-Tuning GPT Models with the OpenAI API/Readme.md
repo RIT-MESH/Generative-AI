@@ -116,6 +116,13 @@ This approach balances power and practicality, enabling tailored AI solutions wi
 
 ## Example Code: Fine-Tuning a GPT Model with the OpenAI API
 
+
+
+
+https://github.com/user-attachments/assets/ec385c8b-2937-4db5-9034-63a3af3176fe
+
+
+
 ```python
 import openai
 import json
