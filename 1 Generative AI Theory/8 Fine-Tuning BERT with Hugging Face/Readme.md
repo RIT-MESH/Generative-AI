@@ -1,9 +1,15 @@
 # Fine-Tuning BERT with Hugging Face in README.md
 
+
+
 Below is a complete guide  to fine-tune a pre-trained BERT model for text classification using the Hugging Face `transformers` library. This example uses the IMDB dataset for sentiment analysis.
 
 ---
 
+
+https://github.com/user-attachments/assets/aa5166d2-ee87-4d9c-8c7b-309f38cbdd7b
+
+---
 ## Prerequisites
 
 - **Libraries**: Install the required packages:
