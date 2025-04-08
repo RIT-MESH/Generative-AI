@@ -1,6 +1,13 @@
 # Deep Dive: LoRA, QLoRA, Quantization, and Fine-Tuning for LLaMA 2
 
 
+
+https://github.com/user-attachments/assets/e4f431dd-1099-4875-b685-e5fa4761fba0
+
+
+
+
+
 ## 1. LoRA (Low-Rank Adaptation)
 LoRA adapts large pre-trained models efficiently by introducing small, trainable updates to specific layers without altering the original weights.
 
