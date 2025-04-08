@@ -1,5 +1,11 @@
 # Fine-Tuning GPT Models with the OpenAI API
 
+
+https://github.com/user-attachments/assets/ab219113-d634-467e-9f22-314c519d9f06
+
+
+
+
 Fine-tuning GPT models using the OpenAI API is a powerful technique to adapt pre-trained language models, such as GPT-3 or GPT-4, to specific tasks or domains. 
 This process builds on the model's existing language understanding, allowing it to perform better on specialized applications like chatbots, content generation, or even niche tasks such as medical text analysis. Below is a detailed explanation of the theory behind fine-tuning with the OpenAI API.
 
