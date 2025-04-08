@@ -103,3 +103,116 @@ Fine-tuning a GPT model with the OpenAI API involves adapting a pre-trained mode
 The process adjusts the model’s weights using transfer learning, making it efficient and effective for specialization. 
 The API simplifies this by handling dataset uploads, training, and model deployment, though success requires careful dataset preparation and hyperparameter management.
 This approach balances power and practicality, enabling tailored AI solutions with minimal overhead.
+
+
+
+---
+
+## Example Code: Fine-Tuning a GPT Model with the OpenAI API
+
+```python
+import openai
+import json
+import time
+import os
+
+# Set your OpenAI API key via an environment variable
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+if not openai.api_key:
+    raise ValueError("Please set the OPENAI_API_KEY environment variable.")
+
+# Step 1: Prepare a small dataset
+# Each entry is a dictionary with "prompt" and "completion" keys
+# Note: This is a tiny dataset for demonstration; use more data in practice
+dataset = [
+    {"prompt": "What is the capital of France?", "completion": "Paris"},
+    {"prompt": "What is the capital of Germany?", "completion": "Berlin"},
+    {"prompt": "What is the capital of Japan?", "completion": "Tokyo"}
+]
+
+# Write the dataset to a JSONL file (one JSON object per line)
+with open("dataset.jsonl", "w") as f:
+    for item in dataset:
+        f.write(json.dumps(item) + "\n")
+
+# Step 2: Upload the dataset to OpenAI
+with open("dataset.jsonl", "rb") as f:
+    file_response = openai.File.create(file=f, purpose="fine-tune")
+
+file_id = file_response["id"]
+print(f"Dataset uploaded successfully. File ID: {file_id}")
+
+# Step 3: Start the fine-tuning job
+# Specify the training file and base model (e.g., "curie")
+fine_tune_response = openai.FineTune.create(
+    training_file=file_id,
+    model="curie"  # Options: "ada", "babbage", "curie", "davinci"
+)
+
+fine_tune_id = fine_tune_response["id"]
+print(f"Fine-tuning job started. Fine-tune ID: {fine_tune_id}")
+
+# Step 4: Wait for the fine-tuning job to complete
+while True:
+    fine_tune = openai.FineTune.retrieve(fine_tune_id)
+    status = fine_tune["status"]
+    if status == "succeeded":
+        print("Fine-tuning completed successfully.")
+        break
+    elif status == "failed":
+        raise Exception("Fine-tuning failed")
+    print("Fine-tuning in progress... waiting 1 minute.")
+    time.sleep(60)
+
+# Step 5: Use the fine-tuned model for inference
+fine_tuned_model = fine_tune["fine_tuned_model"]
+
+response = openai.Completion.create(
+    model=fine_tuned_model,
+    prompt="What is the capital of Italy?"
+)
+
+print("Model response:", response["choices"][0]["text"].strip())
+```
+
+---
+
+## How It Works
+
+### 1. **Setup**
+- **API Key**: The script retrieves your OpenAI API key from the `OPENAI_API_KEY` environment variable. Set it in your terminal with:
+  ```bash
+  export OPENAI_API_KEY="your-api-key-here"
+  ```
+- **Imports**: The required Python libraries (`openai`, `json`, `time`, `os`) are imported.
+
+### 2. **Prepare the Dataset**
+- A list of dictionaries defines the training data, where each dictionary has a `"prompt"` (e.g., a question) and a `"completion"` (e.g., the answer).
+- This data is written to a `dataset.jsonl` file in JSONL format, where each line is a JSON object.
+
+### 3. **Upload the Dataset**
+- The JSONL file is uploaded to OpenAI using `openai.File.create` with the `purpose="fine-tune"` parameter.
+- The file’s unique `file_id` is extracted from the response.
+
+### 4. **Start Fine-Tuning**
+- The fine-tuning job is initiated with `openai.FineTune.create`, specifying the `training_file` (the uploaded file’s ID) and the base `model` (e.g., `"curie"`).
+- The job’s `fine_tune_id` is retrieved for tracking.
+
+### 5. **Wait for Completion**
+- A loop checks the fine-tuning status every minute using `openai.FineTune.retrieve`.
+- It exits when the status is `"succeeded"` or raises an error if `"failed"`.
+
+### 6. **Use the Fine-Tuned Model**
+- The fine-tuned model’s ID is obtained from `fine_tune["fine_tuned_model"]`.
+- An inference request is made with `openai.Completion.create`, asking a new question (e.g., “What is the capital of Italy?”).
+
+---
+
+## Key Notes
+- **Dataset Size**: This example uses only three examples for simplicity. In real applications, provide hundreds or thousands of examples for effective fine-tuning.
+- **Model Selection**: The base model (`"curie"`) can be changed to `"ada"`, `"babbage"`, or `"davinci"`. Costs and performance vary—check OpenAI’s [pricing page](https://openai.com/pricing).
+- **Costs**: Fine-tuning and API usage incur charges based on the model and data size.
+- **Chat Models**: For chat models like `gpt-3.5-turbo`, use `openai.FineTuningJob` instead of `openai.FineTune`. The process is similar but adapted for chat completions.
+- **Formatting**: Follow OpenAI’s [fine-tuning guidelines](https://platform.openai.com/docs/guides/fine-tuning) for dataset formatting (e.g., optional separators like `\n\n###\n\n` between prompt and completion).
+
+This script provides a practical starting point for fine-tuning GPT models with the OpenAI API. Modify the dataset and model as needed for your specific use case!
