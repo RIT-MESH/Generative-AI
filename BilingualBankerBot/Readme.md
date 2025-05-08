@@ -217,386 +217,432 @@ Create the necessary IAM roles to allow AWS services to interact securely.
 
 ``` 
 # --- Start Complete FINAL Lambda Code (Syntax Corrected for invoke_bedrock & All Helpers) ---
-import json 
-import random
-import decimal
-import boto3
-import logging
-import os
-import datetime
-import re # Import re for get_localized_text helper
+
+import json  # Handles JSON encoding/decoding for Bedrock API and Lex responses
+import random  # Generates random numbers for simulated balances and confirmation numbers
+import decimal  # Provides precise decimal arithmetic for financial calculations
+import boto3  # AWS SDK for Python to interact with Bedrock and other AWS services
+import logging  # Enables logging for debugging and monitoring
+import os  # Accesses environment variables (e.g., AWS_REGION)
+import datetime  # Validates and processes dates (e.g., date of birth)
+import re  # Supports regex for parsing placeholders in localized text templates
 
 # --- Logging Setup ---
-logger = logging.getLogger()
-logger.setLevel(logging.INFO) # Use INFO for production, DEBUG for development tracing
+logger = logging.getLogger()  # Creates a logger instance for the Lambda function
+logger.setLevel(logging.INFO)  # Sets logging level to INFO (use DEBUG for detailed tracing in development)
 
 # --- Configuration ---
-BEDROCK_MODEL_ID = "anthropic.claude-instant-v1"
-AWS_DEFAULT_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
+BEDROCK_MODEL_ID = "anthropic.claude-instant-v1"  # Specifies the Bedrock model (Claude Instant)
+AWS_DEFAULT_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")  # Gets AWS region from environment or defaults to ap-northeast-1
 
 # Initialize AWS Clients
 try:
-    bedrock_runtime = boto3.client('bedrock-runtime', region_name=AWS_DEFAULT_REGION)
-    logger.info(f"Initialized Bedrock client for region {AWS_DEFAULT_REGION}")
+    bedrock_runtime = boto3.client('bedrock-runtime', region_name=AWS_DEFAULT_REGION)  # Initializes Bedrock runtime client
+    logger.info(f"Initialized Bedrock client for region {AWS_DEFAULT_REGION}")  # Logs successful initialization
 except Exception as init_error:
-    logger.error(f"FATAL: Could not initialize boto3 Bedrock client: {init_error}", exc_info=True)
-    bedrock_runtime = None
+    logger.error(f"FATAL: Could not initialize boto3 Bedrock client: {init_error}", exc_info=True)  # Logs initialization errors
+    bedrock_runtime = None  # Sets client to None if initialization fails
 
 # --- Bilingual Prompts & Messages ---
 PROMPTS_AND_MESSAGES = {
-    'en-US': {
-        'balance_prompt': "You are a polite bank teller AI assistant responding to a balance inquiry. The user's {account_type} account balance is ${balance}. State this clearly using digits and symbols (like $1,234.56) in a friendly tone.",
-        'fallback_prompt': "You are a helpful banking assistant primarily focused on balance checks and fund transfers for users in Japan. The user said: '{user_input}'. Briefly try to answer if it's a very general banking question using only common knowledge (do not invent specifics like interest rates). If you cannot answer, or it's not a general banking question, politely state you can primarily assist with balance checks and fund transfers and ask the user to rephrase.",
-        'transfer_confirmed_simple': "Okay, the simulated transfer of ${amount} from {source_account} to {destination_account} is complete. Your confirmation number is {confirmation_number}.",
-        'transfer_cancelled': "Okay, the transfer request has been cancelled.",
-        'transfer_confirmation_custom': "Okay, please confirm: Transfer ${amount} from {source_account} to {destination_account}? (Yes/No)",
-        'default_error': "I'm sorry, there was an issue processing your request at this moment. Please try again.",
-        'bedrock_error': "I'm having a little trouble generating a detailed response right now, but I can confirm the basic details. Alternatively, please try again shortly.",
-        'ask_dob': "For verification, please provide your date of birth in YYYY-MM-DD format.",
-        'balance_confirmed_simple': "Okay, the current balance for your {account_type} account is ${balance}."
+    'en-US': {  # English (US) prompts and messages
+        'balance_prompt': "You are a polite bank teller AI assistant responding to a balance inquiry. The user's {account_type} account balance is ${balance}. State this clearly using digits and symbols (like $1,234.56) in a friendly tone.",  # Prompt for Bedrock balance response
+        'fallback_prompt': "You are a helpful banking assistant primarily focused on balance checks and fund transfers for users in Japan. The user said: '{user_input}'. Briefly try to answer if it's a very general banking question using only common knowledge (do not invent specifics like interest rates). If you cannot answer, or it's not a general banking question, politely state you can primarily assist with balance checks and fund transfers and ask the user to rephrase.",  # Prompt for Bedrock fallback response
+        'transfer_confirmed_simple': "Okay, the simulated transfer of ${amount} from {source_account} to {destination_account} is complete. Your confirmation number is {confirmation_number}.",  # Message for confirmed transfer
+        'transfer_cancelled': "Okay, the transfer request has been cancelled.",  # Message for cancelled transfer
+        'transfer_confirmation_custom': "Okay, please confirm: Transfer ${amount} from {source_account} to {destination_account}? (Yes/No)",  # Message for transfer confirmation prompt
+        'default_error': "I'm sorry, there was an issue processing your request at this moment. Please try again.",  # Generic error message
+        'bedrock_error': "I'm having a little trouble generating a detailed response right now, but I can confirm the basic details. Alternatively, please try again shortly.",  # Error message for Bedrock failures
+        'ask_dob': "For verification, please provide your date of birth in YYYY-MM-DD format.",  # Prompt to elicit date of birth
+        'balance_confirmed_simple': "Okay, the current balance for your {account_type} account is ${balance}."  # Simple balance confirmation message
     },
-    'ja_JP': { # Ensure key is ja_JP (underscore)
-        'balance_prompt': "あなたは丁寧な銀行のAIアシスタントです。残高照会の応答をしています。ユーザーの {account_type} 口座の残高は ¥{balance} です。これを明確かつ簡潔に、算用数字と記号（例：¥123,456）を使用して、親しみやすいトーンで述べてください。",
-        'fallback_prompt': "あなたは日本のユーザー向けの親切な銀行アシスタントで、主に残高照会と資金振替を扱います。ユーザーは次のように言いました：「{user_input}」。もし一般的な銀行業務に関する非常に簡単な質問であれば、一般的な知識のみを使用して簡潔に答えてみてください（金利などの具体的な情報は捏造しないでください）。答えられない場合、または一般的な銀行の質問でない場合は、主に残高照会と資金振替のサポートが可能であることを丁寧に述べ、ユーザーに言い換えをお願いしてください。",
-        'transfer_confirmed_simple': "承知いたしました。{source_account} 口座から {destination_account} 口座への ¥{amount} の模擬振込が完了しました。確認番号は {confirmation_number} です。",
-        'transfer_cancelled': "承知しました、振替リクエストはキャンセルされました。",
-        'transfer_confirmation_custom': "確認：{source_account} 口座から {destination_account} 口座へ ¥{amount} 振り替えます。よろしいですか？ (はい/いいえ)",
-        'default_error': "申し訳ありません、リクエストの処理中に問題が発生しました。もう一度お試しください。",
-        'bedrock_error': "申し訳ありません、現在詳細な応答を生成するのに少し問題が発生していますが、基本的な情報は確認できます。または、しばらくしてからもう一度お試しください。",
-        'ask_dob': "確認のため、生年月日をYYYY-MM-DD形式で教えてください。",
-        'balance_confirmed_simple': "承知いたしました。{account_type}口座の現在の残高は ¥{balance} です。"
+    'ja_JP': {  # Japanese prompts and messages (note underscore in locale key)
+        'balance_prompt': "あなたは丁寧な銀行のAIアシスタントです。残高照会の応答をしています。ユーザーの {account_type} 口座の残高は ¥{balance} です。これを明確かつ簡潔に、算用数字と記号（例：¥123,456）を使用して、親しみやすいトーンで述べてください。",  # Japanese prompt for Bedrock balance response
+        'fallback_prompt': "あなたは日本のユーザー向けの親切な銀行アシスタントで、主に残高照会と資金振替を扱います。ユーザーは次のように言いました：「{user_input}」。もし一般的な銀行業務に関する非常に簡単な質問であれば、一般的な知識のみを使用して簡潔に答えてみてください（金利などの具体的な情報は捏造しないでください）。答えられない場合、または一般的な銀行の質問でない場合は、主に残高照会と資金振替のサポートが可能であることを丁寧に述べ、ユーザーに言い換えをお願いしてください。",  # Japanese prompt for Bedrock fallback response
+        'transfer_confirmed_simple': "承知いたしました。{source_account} 口座から {destination_account} 口座への ¥{amount} の模擬振込が完了しました。確認番号は {confirmation_number} です。",  # Japanese message for confirmed transfer
+        'transfer_cancelled': "承知しました、振替リクエストはキャンセルされました。",  # Japanese message for cancelled transfer
+        'transfer_confirmation_custom': "確認：{source_account} 口座から {destination_account} 口座へ ¥{amount} 振り替えます。よろしいですか？ (はい/いいえ)",  # Japanese message for transfer confirmation
+        'default_error': "申し訳ありません、リクエストの処理中に問題が発生しました。もう一度お試しください。",  # Japanese generic error message
+        'bedrock_error': "申し訳ありません、現在詳細な応答を生成するのに少し問題が発生していますが、基本的な情報は確認できます。または、しばらくしてからもう一度お試しください。",  # Japanese Bedrock error message
+        'ask_dob': "確認のため、生年月日をYYYY-MM-DD形式で教えてください。",  # Japanese prompt to elicit date of birth
+        'balance_confirmed_simple': "承知いたしました。{account_type}口座の現在の残高は ¥{balance} です。"  # Japanese simple balance confirmation message
     }
 }
-JA_ACCOUNT_MAP = {"Checking": "普通預金", "Savings": "貯蓄預金", "Credit": "クレジット"}
+JA_ACCOUNT_MAP = {"Checking": "普通預金", "Savings": "貯蓄預金", "Credit": "クレジット"}  # Maps English account types to Japanese for display
 
 # --- Helper Functions (Correct Syntax/Indentation) ---
 
 def is_valid_iso_date(date_string):
     """Checks if a string strictly matches YYYY-MM-DD format and is valid."""
-    if not date_string or not isinstance(date_string, str):
+    if not date_string or not isinstance(date_string, str):  # Ensures input is a non-empty string
         return False
-    if len(date_string) != 10 or date_string.count('-') != 2:
+    if len(date_string) != 10 or date_string.count('-') != 2:  # Checks for YYYY-MM-DD format
         return False
     try:
-        year, month, day = map(int, date_string.split('-'))
-        datetime.datetime(year, month, day) # Validate date components
+        year, month, day = map(int, date_string.split('-'))  # Splits and converts date components to integers
+        datetime.datetime(year, month, day)  # Validates date components (raises ValueError if invalid)
         # Validate year range
-        if 1900 < year < datetime.datetime.now().year + 1:
+        if 1900 < year < datetime.datetime.now().year + 1:  # Ensures year is reasonable (post-1900, not future)
              return True
         else:
-             logger.warning(f"Year out of range: {year}")
+             logger.warning(f"Year out of range: {year}")  # Logs warning for invalid year
              return False
     except ValueError:
-        return False # Handle parse errors or invalid dates
+        return False  # Returns False for invalid dates or parsing errors
 
 def get_localized_text(locale, key, **kwargs):
     """Gets localized text template and formats basic placeholders."""
-    texts_dict=PROMPTS_AND_MESSAGES
-    final_locale = locale if locale in texts_dict else 'en-US'
-    lang_texts = texts_dict[final_locale]
-    template = lang_texts.get(key, lang_texts.get('default_error', texts_dict['en-US']['default_error']))
+    texts_dict = PROMPTS_AND_MESSAGES  # References the bilingual prompts dictionary
+    final_locale = locale if locale in texts_dict else 'en-US'  # Defaults to en-US if locale is unsupported
+    lang_texts = texts_dict[final_locale]  # Gets locale-specific texts
+    template = lang_texts.get(key, lang_texts.get('default_error', texts_dict['en-US']['default_error']))  # Gets template or fallback error
     try:
         # Use regex to find placeholders like {key_name}
-        placeholders = re.findall(r'\{(\w+)\}', template)
+        placeholders = re.findall(r'\{(\w+)\}', template)  # Extracts placeholder names
         # Build args safely, providing fallback for missing kwargs
         format_args = {}
         for p in placeholders:
-             format_args[p]=kwargs.get(p,f"[{p.upper()}_MISSING]") # Use get() for safety
-        return template.format(**format_args)
+             format_args[p] = kwargs.get(p, f"[{p.upper()}_MISSING]")  # Uses provided value or marks missing placeholder
+        return template.format(**format_args)  # Formats template with provided values
     except Exception as e:
-        logger.error(f"Formatting error locale '{locale}', key '{key}', kwargs '{kwargs}': {e}", exc_info=True)
+        logger.error(f"Formatting error locale '{locale}', key '{key}', kwargs '{kwargs}': {e}", exc_info=True)  # Logs formatting errors
         # Return a safe default error message
-        error_lang_texts = texts_dict.get(locale, texts_dict['en-US'])
-        return error_lang_texts.get('default_error', "An error occurred.")
+        error_lang_texts = texts_dict.get(locale, texts_dict['en-US'])  # Gets error message for locale
+        return error_lang_texts.get('default_error', "An error occurred.")  # Returns default error
 
 def invoke_bedrock(prompt):
     """Invokes Bedrock model (Claude Instant). Returns text or None."""
-    if not bedrock_runtime:
-        logger.error("Bedrock runtime client not initialized. Cannot invoke model.")
+    if not bedrock_runtime:  # Checks if Bedrock client is initialized
+        logger.error("Bedrock runtime client not initialized. Cannot invoke model.")  # Logs error if client is missing
         return None
 
-    logger.info(f"Invoking Bedrock model {BEDROCK_MODEL_ID} in region {AWS_DEFAULT_REGION}")
+    logger.info(f"Invoking Bedrock model {BEDROCK_MODEL_ID} in region {AWS_DEFAULT_REGION}")  # Logs Bedrock invocation
     # Format prompt correctly for Claude Instant
-    formatted_prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+    formatted_prompt = f"\n\nHuman: {prompt}\n\nAssistant:"  # Formats prompt with Claude-specific structure
     # Be cautious logging potentially sensitive prompt data in production
-    logger.debug(f"Formatted Prompt first 100 chars: {formatted_prompt[:100]}...")
+    logger.debug(f"Formatted Prompt first 100 chars: {formatted_prompt[:100]}...")  # Logs partial prompt for debugging
 
     try:
         # Body structure specifically for Claude Instant/V2
         body = json.dumps({
-            "prompt": formatted_prompt,
-            "max_tokens_to_sample": 300,
-            "temperature": 0.5,
-            "stop_sequences": ["\n\nHuman:"]
+            "prompt": formatted_prompt,  # Includes formatted prompt
+            "max_tokens_to_sample": 300,  # Limits response length
+            "temperature": 0.5,  # Controls response randomness (0.5 for balanced output)
+            "stop_sequences": ["\n\nHuman:"]  # Stops generation at new human prompt
         })
 
         # Make the API call
         response = bedrock_runtime.invoke_model(
-            body=body,
-            modelId=BEDROCK_MODEL_ID,
-            accept='application/json',
-            contentType='application/json'
-            )
+            body=body,  # Sends JSON-encoded request body
+            modelId=BEDROCK_MODEL_ID,  # Specifies the model
+            accept='application/json',  # Expects JSON response
+            contentType='application/json'  # Sends JSON request
+        )
 
         # Process the response
-        response_body = json.loads(response['body'].read())
-        logger.info(f"Bedrock Raw Response Body: {json.dumps(response_body)}") # Log for debugging
+        response_body = json.loads(response['body'].read())  # Decodes and parses response
+        logger.info(f"Bedrock Raw Response Body: {json.dumps(response_body)}")  # Logs raw response for debugging
 
         # Extract text ('completion' key for Claude Instant/V2)
-        generated_text = response_body.get('completion')
+        generated_text = response_body.get('completion')  # Gets generated text
 
         if not generated_text:
-            logger.warning("Bedrock response parsing failed ('completion' key missing or empty).")
-            return None # Return None if no text found
+            logger.warning("Bedrock response parsing failed ('completion' key missing or empty).")  # Logs missing text
+            return None  # Returns None if no text found
 
         # Clean and return the text
-        cleaned_text = generated_text.strip()
-        logger.info(f"Bedrock Generated Text (Cleaned): {cleaned_text}")
+        cleaned_text = generated_text.strip()  # Removes leading/trailing whitespace
+        logger.info(f"Bedrock Generated Text (Cleaned): {cleaned_text}")  # Logs cleaned text
         return cleaned_text
 
     except Exception as e:
         # Log any errors during the invocation or processing
-        logger.error(f"Bedrock invocation error for model {BEDROCK_MODEL_ID}: {e}", exc_info=True)
-        return None # Return None on any exception
+        logger.error(f"Bedrock invocation error for model {BEDROCK_MODEL_ID}: {e}", exc_info=True)  # Logs errors
+        return None  # Returns None on any exception
 
 # --- Lex Response Helpers ---
 def close(session_attributes, intent_name, fulfillment_state, message, locale):
     """Builds a Close response for Lex V2."""
-    logger.info(f"Closing intent: {intent_name}, State: {fulfillment_state}")
-    response_message = message if message else get_localized_text(locale, 'default_error')
-    logger.debug(f"Close Msg: {response_message}")
+    logger.info(f"Closing intent: {intent_name}, State: {fulfillment_state}")  # Logs intent closure
+    response_message = message if message else get_localized_text(locale, 'default_error')  # Uses provided message or default error
+    logger.debug(f"Close Msg: {response_message}")  # Logs response message
     # Base response structure
     response = {
         'sessionState': {
-            'sessionAttributes': session_attributes or {},
-            'dialogAction': {'type': 'Close'},
-            'intent': {'name': intent_name, 'state': fulfillment_state}
+            'sessionAttributes': session_attributes or {},  # Includes session attributes
+            'dialogAction': {'type': 'Close'},  # Specifies Close action
+            'intent': {'name': intent_name, 'state': fulfillment_state}  # Sets intent name and state
             # activeContexts managed specifically in fulfillment logic below
         },
-        'messages': [{'contentType': 'PlainText', 'content': response_message}]
+        'messages': [{'contentType': 'PlainText', 'content': response_message}]  # Sends response message
     }
     return response
 
 def delegate(session_attributes, intent_name, slots):
     """Builds a Delegate response for Lex V2."""
-    logger.info(f"Delegating intent: {intent_name}")
+    logger.info(f"Delegating intent: {intent_name}")  # Logs delegation
     return {
         'sessionState': {
-            'sessionAttributes': session_attributes or {},
-            'dialogAction': {'type': 'Delegate'},
-            'intent': {'name': intent_name, 'slots': slots or {}}
+            'sessionAttributes': session_attributes or {},  # Includes session attributes
+            'dialogAction': {'type': 'Delegate'},  # Specifies Delegate action
+            'intent': {'name': intent_name, 'slots': slots or {}}  # Includes intent and slots
         }
     }
 
 def elicit_slot(session_attributes, intent_name, slots, slot_to_elicit, message, locale):
-     """Builds an ElicitSlot response for Lex V2."""
-     logger.info(f"Eliciting slot: {slot_to_elicit} for intent: {intent_name}")
-     response_message = message if message else get_localized_text(locale, 'default_error')
-     logger.debug(f"Elicit Msg: {response_message}")
-     current_slots = slots or {}
-     if slot_to_elicit in current_slots:
-         current_slots[slot_to_elicit] = None # Clear value before eliciting
-     return {
-         'sessionState': {
-             'sessionAttributes': session_attributes or {},
-             'dialogAction': {
-                 'type': 'ElicitSlot',
-                 'slotToElicit': slot_to_elicit
-             },
-             'intent': {
-                 'name': intent_name,
-                 'slots': current_slots
-             }
-         },
-         'messages': [{'contentType': 'PlainText', 'content': response_message}]
-     }
+    """Builds an ElicitSlot response for Lex V2."""
+    logger.info(f"Eliciting slot: {slot_to_elicit} for intent: {intent_name}")  # Logs slot elicitation
+    response_message = message if message else get_localized_text(locale, 'default_error')  # Uses provided message or default
+    logger.debug(f"Elicit Msg: {response_message}")  # Logs response message
+    current_slots = slots or {}  # Gets current slots
+    if slot_to_elicit in current_slots:
+        current_slots[slot_to_elicit] = None  # Clears slot value before eliciting
+    return {
+        'sessionState': {
+            'sessionAttributes': session_attributes or {},  # Includes session attributes
+            'dialogAction': {
+                'type': 'ElicitSlot',  # Specifies ElicitSlot action
+                'slotToElicit': slot_to_elicit  # Specifies slot to elicit
+            },
+            'intent': {
+                'name': intent_name,  # Includes intent name
+                'slots': current_slots  # Includes updated slots
+            }
+        },
+        'messages': [{'contentType': 'PlainText', 'content': response_message}]  # Sends response message
+    }
 
 def confirm_intent(session_attributes, intent_name, slots, message, locale):
-     """Builds a ConfirmIntent response for Lex V2."""
-     logger.info(f"Asking Confirmation for intent: {intent_name}")
-     response_message = message if message else get_localized_text(locale, 'default_error')
-     logger.debug(f"Confirm Msg: {response_message}")
-     return {
-         'sessionState': {
-             'sessionAttributes': session_attributes or {},
-             'dialogAction': {'type': 'ConfirmIntent'},
-             'intent': {'name': intent_name, 'slots': slots or {}}
-             },
-         'messages': [{'contentType': 'PlainText', 'content': response_message}]
-     }
-
+    """Builds a ConfirmIntent response for Lex V2."""
+    logger.info(f"Asking Confirmation for intent: {intent_name}")  # Logs confirmation request
+    response_message = message if message else get_localized_text(locale, 'default_error')  # Uses provided message or default
+    logger.debug(f"Confirm Msg: {response_message}")  # Logs response message
+    return {
+        'sessionState': {
+            'sessionAttributes': session_attributes or {},  # Includes session attributes
+            'dialogAction': {'type': 'ConfirmIntent'},  # Specifies ConfirmIntent action
+            'intent': {'name': intent_name, 'slots': slots or {}}  # Includes intent and slots
+        },
+        'messages': [{'contentType': 'PlainText', 'content': response_message}]  # Sends response message
+    }
 
 # --- Intent Fulfillment Logic ---
 # Called ONLY by Fulfillment Dispatcher
 
 def fulfill_check_balance(intent_request, locale):
-    intent_name = intent_request['sessionState']['intent']['name']
-    slots = intent_request['sessionState']['intent']['slots']
-    session_attributes = intent_request['sessionState'].get('sessionAttributes', {})
-    account_type = slots.get('accountType', {}).get('value', {}).get('interpretedValue')
-    dob_value = slots.get('dateOfBirth', {}).get('value', {}).get('interpretedValue')
-    if not (account_type and dob_value): logger.error(f"Fulfill CB error: Slots missing. Acct: {account_type}, DOB: {dob_value}"); return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)
-    logger.info(f"Fulfillment CheckBalance: Account='{account_type}', DOB='{dob_value}'")
-    fake_balance = decimal.Decimal(random.randrange(500000, 99999999)) / decimal.Decimal(100)
+    """Handles CheckBalance intent fulfillment."""
+    intent_name = intent_request['sessionState']['intent']['name']  # Gets intent name
+    slots = intent_request['sessionState']['intent']['slots']  # Gets intent slots
+    session_attributes = intent_request['sessionState'].get('sessionAttributes', {})  # Gets session attributes
+    account_type = slots.get('accountType', {}).get('value', {}).get('interpretedValue')  # Gets account type
+    dob_value = slots.get('dateOfBirth', {}).get('value', {}).get('interpretedValue')  # Gets date of birth
+    if not (account_type and dob_value):  # Checks if required slots are filled
+        logger.error(f"Fulfill CB error: Slots missing. Acct: {account_type}, DOB: {dob_value}")  # Logs error
+        return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
+    logger.info(f"Fulfillment CheckBalance: Account='{account_type}', DOB='{dob_value}'")  # Logs fulfillment details
+    fake_balance = decimal.Decimal(random.randrange(500000, 99999999)) / decimal.Decimal(100)  # Generates random balance
     if locale == 'ja_JP':
-         logger.info("Locale is ja_JP. Using direct message for balance.")
-         formatted_balance_str = f"{int(fake_balance):,}"
-         display_account_type_ja = JA_ACCOUNT_MAP.get(account_type, account_type)
-         message = get_localized_text(locale, 'balance_confirmed_simple', account_type=display_account_type_ja, balance=formatted_balance_str)
+        logger.info("Locale is ja_JP. Using direct message for balance.")  # Logs locale-specific handling
+        formatted_balance_str = f"{int(fake_balance):,}"  # Formats balance as integer for Japanese
+        display_account_type_ja = JA_ACCOUNT_MAP.get(account_type, account_type)  # Maps account type to Japanese
+        message = get_localized_text(locale, 'balance_confirmed_simple', account_type=display_account_type_ja, balance=formatted_balance_str)  # Gets simple balance message
     else:
-        logger.info("Locale is not ja_JP. Using Bedrock for balance.")
-        try: formatted_balance_en = f"{decimal.Decimal(fake_balance):,.2f}"
-        except: formatted_balance_en = "[balance_err]"
-        prompt = get_localized_text(locale, 'balance_prompt', account_type=account_type, balance=formatted_balance_en)
-        generated_message = invoke_bedrock(prompt)
-        if not generated_message: message = get_localized_text(locale, 'bedrock_error') + f" (Bal: {formatted_balance_en})"
-        else: message = generated_message
-    output_contexts = [{'name': 'contextCheckBalance', 'contextAttributes': {'dobProvided': dob_value, 'checkedAccount': account_type}, 'timeToLive': {'timeToLiveInSeconds': 90, 'turnsToLive': 5}}]
-    response = close(session_attributes, intent_name, 'Fulfilled', message, locale)
-    if response and 'sessionState' in response: response['sessionState']['activeContexts'] = output_contexts
+        logger.info("Locale is not ja_JP. Using Bedrock for balance.")  # Logs Bedrock usage
+        try:
+            formatted_balance_en = f"{decimal.Decimal(fake_balance):,.2f}"  # Formats balance with 2 decimals for English
+        except:
+            formatted_balance_en = "[balance_err]"  # Fallback for formatting errors
+        prompt = get_localized_text(locale, 'balance_prompt', account_type=account_type, balance=formatted_balance_en)  # Gets Bedrock prompt
+        generated_message = invoke_bedrock(prompt)  # Invokes Bedrock for response
+        if not generated_message:
+            message = get_localized_text(locale, 'bedrock_error') + f" (Bal: {formatted_balance_en})"  # Uses fallback if Bedrock fails
+        else:
+            message = generated_message  # Uses Bedrock-generated message
+    output_contexts = [{'name': 'contextCheckBalance', 'contextAttributes': {'dobProvided': dob_value, 'checkedAccount': account_type}, 'timeToLive': {'timeToLiveInSeconds': 90, 'turnsToLive': 5}}]  # Sets output context
+    response = close(session_attributes, intent_name, 'Fulfilled', message, locale)  # Builds close response
+    if response and 'sessionState' in response:
+        response['sessionState']['activeContexts'] = output_contexts  # Adds output context to response
     return response
 
 def fulfill_followup_check_balance(intent_request, locale):
-    intent_name = intent_request['sessionState']['intent']['name']; slots = intent_request['sessionState']['intent']['slots']; session_attributes = intent_request['sessionState'].get('sessionAttributes', {})
-    account_type = slots.get('accountType', {}).get('value', {}).get('interpretedValue'); dob_value = slots.get('dateOfBirth', {}).get('value', {}).get('interpretedValue')
-    if not (account_type and dob_value): logger.error(f"Fulfill Followup error: Slots missing. Acct: {account_type}, DOB: {dob_value}"); return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)
-    logger.info(f"Fulfillment Followup: Account='{account_type}', DOB='{dob_value}'")
-    fake_balance = decimal.Decimal(random.randrange(10000, 5000000)) / decimal.Decimal(100)
+    """Handles FollowupCheckBalance intent fulfillment."""
+    intent_name = intent_request['sessionState']['intent']['name']  # Gets intent name
+    slots = intent_request['sessionState']['intent']['slots']  # Gets intent slots
+    session_attributes = intent_request['sessionState'].get('sessionAttributes', {})  # Gets session attributes
+    account_type = slots.get('accountType', {}).get('value', {}).get('interpretedValue')  # Gets account type
+    dob_value = slots.get('dateOfBirth', {}).get('value', {}).get('interpretedValue')  # Gets date of birth
+    if not (account_type and dob_value):  # Checks if required slots are filled
+        logger.error(f"Fulfill Followup error: Slots missing. Acct: {account_type}, DOB: {dob_value}")  # Logs error
+        return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
+    logger.info(f"Fulfillment Followup: Account='{account_type}', DOB='{dob_value}'")  # Logs fulfillment details
+    fake_balance = decimal.Decimal(random.randrange(10000, 5000000)) / decimal.Decimal(100)  # Generates random balance
     if locale == 'ja_JP':
-         logger.info("Locale is ja_JP. Using direct template for followup.")
-         formatted_balance_str = f"{int(fake_balance):,}"
-         display_account_type_ja = JA_ACCOUNT_MAP.get(account_type, account_type)
-         message = get_localized_text(locale, 'balance_confirmed_simple', account_type=display_account_type_ja, balance=formatted_balance_str)
+        logger.info("Locale is ja_JP. Using direct template for followup.")  # Logs locale-specific handling
+        formatted_balance_str = f"{int(fake_balance):,}"  # Formats balance as integer for Japanese
+        display_account_type_ja = JA_ACCOUNT_MAP.get(account_type, account_type)  # Maps account type to Japanese
+        message = get_localized_text(locale, 'balance_confirmed_simple', account_type=display_account_type_ja, balance=formatted_balance_str)  # Gets simple balance message
     else:
-        logger.info("Locale is not ja_JP. Using Bedrock for followup.")
-        try: formatted_balance_en = f"{decimal.Decimal(fake_balance):,.2f}"
-        except: formatted_balance_en = "[balance_err]"
-        prompt = get_localized_text(locale, 'balance_prompt', account_type=account_type, balance=formatted_balance_en)
-        generated_message = invoke_bedrock(prompt)
-        if not generated_message: message = get_localized_text(locale, 'bedrock_error') + f" (Bal: {formatted_balance_en})"
-        else: message = generated_message
-    return close(session_attributes, intent_name, 'Fulfilled', message, locale)
+        logger.info("Locale is not ja_JP. Using Bedrock for followup.")  # Logs Bedrock usage
+        try:
+            formatted_balance_en = f"{decimal.Decimal(fake_balance):,.2f}"  # Formats balance with 2 decimals for English
+        except:
+            formatted_balance_en = "[balance_err]"  # Fallback for formatting errors
+        prompt = get_localized_text(locale, 'balance_prompt', account_type=account_type, balance=formatted_balance_en)  # Gets Bedrock prompt
+        generated_message = invoke_bedrock(prompt)  # Invokes Bedrock for response
+        if not generated_message:
+            message = get_localized_text(locale, 'bedrock_error') + f" (Bal: {formatted_balance_en})"  # Uses fallback if Bedrock fails
+        else:
+            message = generated_message  # Uses Bedrock-generated message
+    return close(session_attributes, intent_name, 'Fulfilled', message, locale)  # Returns close response
 
 def fulfill_make_transfer(intent_request, locale):
-    # Handles post-confirmation fulfillment (Confirmed/Denied states)
-    intent_name = intent_request['sessionState']['intent']['name']; slots = intent_request['sessionState']['intent']['slots']; session_attributes = intent_request['sessionState'].get('sessionAttributes', {})
-    confirmation_status = intent_request['sessionState']['intent'].get('confirmationState')
-    logger.info(f"Fulfillment MakeTransfer - RECEIVED State: {confirmation_status}")
+    """Handles MakeTransfer intent fulfillment (post-confirmation)."""
+    intent_name = intent_request['sessionState']['intent']['name']  # Gets intent name
+    slots = intent_request['sessionState']['intent']['slots']  # Gets intent slots
+    session_attributes = intent_request['sessionState'].get('sessionAttributes', {})  # Gets session attributes
+    confirmation_status = intent_request['sessionState']['intent'].get('confirmationState')  # Gets confirmation status
+    logger.info(f"Fulfillment MakeTransfer - RECEIVED State: {confirmation_status}")  # Logs confirmation status
 
     if confirmation_status == 'Denied':
-        message = get_localized_text(locale, 'transfer_cancelled')
-        return close(session_attributes, intent_name, 'Fulfilled', message, locale)
+        message = get_localized_text(locale, 'transfer_cancelled')  # Gets cancellation message
+        return close(session_attributes, intent_name, 'Fulfilled', message, locale)  # Returns cancellation response
     elif confirmation_status == 'Confirmed':
-        amount_str = slots.get('amount', {}).get('value', {}).get('interpretedValue')
-        source_account_resolved = slots.get('sourceAccount', {}).get('value', {}).get('interpretedValue')
-        destination_account_resolved = slots.get('destinationAccount', {}).get('value', {}).get('interpretedValue')
-        if not (amount_str and source_account_resolved and destination_account_resolved): logger.error("Fulfill Transfer Confirmed missing slots!"); return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)
-        logger.info(f"Confirmed transfer sim: {amount_str} from {source_account_resolved} to {destination_account_resolved}")
-        conf_num = f"SIM-{random.randint(100000, 999999)}"
-        display_source = source_account_resolved; display_destination = destination_account_resolved
+        amount_str = slots.get('amount', {}).get('value', {}).get('interpretedValue')  # Gets transfer amount
+        source_account_resolved = slots.get('sourceAccount', {}).get('value', {}).get('interpretedValue')  # Gets source account
+        destination_account_resolved = slots.get('destinationAccount', {}).get('value', {}).get('interpretedValue')  # Gets destination account
+        if not (amount_str and source_account_resolved and destination_account_resolved):  # Checks if required slots are filled
+            logger.error("Fulfill Transfer Confirmed missing slots!")  # Logs error
+            return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
+        logger.info(f"Confirmed transfer sim: {amount_str} from {source_account_resolved} to {destination_account_resolved}")  # Logs transfer details
+        conf_num = f"SIM-{random.randint(100000, 999999)}"  # Generates random confirmation number
+        display_source = source_account_resolved  # Sets display source account
+        display_destination = destination_account_resolved  # Sets display destination account
         if locale == 'ja_JP':
-            display_source = JA_ACCOUNT_MAP.get(source_account_resolved, source_account_resolved)
-            display_destination = JA_ACCOUNT_MAP.get(destination_account_resolved, destination_account_resolved)
-        try: formatted_amount = f"{int(decimal.Decimal(amount_str)):,}" if locale == 'ja_JP' else f"{decimal.Decimal(amount_str):,.2f}"
-        except: formatted_amount = "[amt_err]"
-        message = get_localized_text(locale, 'transfer_confirmed_simple', amount=formatted_amount, source_account=display_source, destination_account=display_destination, confirmation_number=conf_num)
-        return close(session_attributes, intent_name, 'Fulfilled', message, locale)
-    else: # Should not be None here if dialog hook custom confirmation works
-        logger.error(f"Fulfillment MakeTransfer unexpected state: {confirmation_status}")
-        return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)
+            display_source = JA_ACCOUNT_MAP.get(source_account_resolved, source_account_resolved)  # Maps source to Japanese
+            display_destination = JA_ACCOUNT_MAP.get(destination_account_resolved, destination_account_resolved)  # Maps destination to Japanese
+        try:
+            formatted_amount = f"{int(decimal.Decimal(amount_str)):,}" if locale == 'ja_JP' else f"{decimal.Decimal(amount_str):,.2f}"  # Formats amount
+        except:
+            formatted_amount = "[amt_err]"  # Fallback for formatting errors
+        message = get_localized_text(locale, 'transfer_confirmed_simple', amount=formatted_amount, source_account=display_source, destination_account=display_destination, confirmation_number=conf_num)  # Gets confirmation message
+        return close(session_attributes, intent_name, 'Fulfilled', message, locale)  # Returns confirmation response
+    else:  # Handles unexpected confirmation state
+        logger.error(f"Fulfillment MakeTransfer unexpected state: {confirmation_status}")  # Logs error
+        return close(session_attributes, intent_name, 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
 
 def fulfill_fallback(intent_request, locale):
-    # Uses Bedrock
-    intent_name = intent_request['sessionState']['intent']['name']; user_input = intent_request.get('inputTranscript',''); session_attributes = intent_request['sessionState'].get('sessionAttributes',{})
-    logger.info(f"Fulfillment Fallback: Input='{user_input}'");
-    if not user_input: message=get_localized_text(locale,'default_error'); return close(session_attributes,intent_name,'Failed',message,locale)
-    prompt = get_localized_text(locale,'fallback_prompt',user_input=user_input); gen_msg=invoke_bedrock(prompt)
-    message = gen_msg if gen_msg else get_localized_text(locale,'bedrock_error'); return close(session_attributes,intent_name,'Failed',message,locale)
+    """Handles FallbackIntent fulfillment using Bedrock."""
+    intent_name = intent_request['sessionState']['intent']['name']  # Gets intent name
+    user_input = intent_request.get('inputTranscript', '')  # Gets user input
+    session_attributes = intent_request['sessionState'].get('sessionAttributes', {})  # Gets session attributes
+    logger.info(f"Fulfillment Fallback: Input='{user_input}'")  # Logs user input
+    if not user_input:
+        message = get_localized_text(locale, 'default_error')  # Uses default error if no input
+        return close` close(session_attributes, intent_name, 'Failed', message, locale)  # Returns error response
+    prompt = get_localized_text(locale, 'fallback_prompt', user_input=user_input)  # Gets Bedrock prompt
+    gen_msg = invoke_bedrock(prompt)  # Invokes Bedrock for response
+    message = gen_msg if gen_msg else get_localized_text(locale, 'bedrock_error')  # Uses Bedrock response or fallback
+    return close(self.session_attributes, intent_name, 'Failed', message, locale)  # Returns response
 
 # --- Fulfillment Dispatcher ---
 def dispatch_fulfillment(intent_request):
     """Routes fulfillment requests based on intent name."""
-    intent_name = intent_request['sessionState']['intent']['name']
-    locale = intent_request['bot']['localeId']
-    logger.info(f"Dispatching fulfillment for intent: {intent_name}")
-    if intent_name == 'CheckBalance': return fulfill_check_balance(intent_request, locale)
-    if intent_name == 'FollowupCheckBalance': return fulfill_followup_check_balance(intent_request, locale)
-    if intent_name == 'MakeTransfer': return fulfill_make_transfer(intent_request, locale) # Handles Confirmed/Denied only
-    if intent_name == 'FallbackIntent': return fulfill_fallback(intent_request, locale)
-    logger.error(f"Unhandled Fulfillment Intent: {intent_name}")
-    raise ValueError(f"Unsupported fulfillment intent: {intent_name}")
-
+    intent_name = intent_request['sessionState']['intent']['name']  # Gets intent name
+    locale = intent_request['bot']['localeId']  # Gets locale
+    logger.info(f"Dispatching fulfillment for intent: {intent_name}")  # Logs dispatch
+    if intent_name == 'CheckBalance':
+        return fulfill_check_balance(intent_request, locale)  # Dispatches to CheckBalance
+    if intent_name == 'FollowupCheckBalance':
+        return fulfill_followup_check_balance(intent_request, locale)  # Dispatches to FollowupCheckBalance
+    if intent_name == 'MakeTransfer':
+        return fulfill_make_transfer(intent_request, locale)  # Dispatches to MakeTransfer
+    if intent_name == 'FallbackIntent':
+        return fulfill_fallback(intent_request, locale)  # Dispatches to FallbackIntent
+    logger.error(f"Unhandled Fulfillment Intent: {intent_name}")  # Logs unhandled intent
+    raise ValueError(f"Unsupported fulfillment intent: {intent_name}")  # Raises error
 
 # --- Lambda Entry Point ---
 def lambda_handler(event, context):
     """Main Lambda handler function, routes based on invocationSource."""
-    logger.info(f"Lambda Event Received: {json.dumps(event)}")
-    if not bedrock_runtime: logger.critical("Bedrock client missing!"); safe_locale=event.get('bot',{}).get('localeId','en-US'); return close({},'InitError','Failed',get_localized_text(safe_locale,'default_error'), safe_locale)
+    logger.info(f"Lambda Event Received: {json.dumps(event)}")  # Logs incoming event
+    if not bedrock_runtime:
+        logger.critical("Bedrock client missing!")  # Logs critical error
+        safe_locale = event.get('bot', {}).get('localeId', 'en-US')  # Gets safe locale
+        return close({}, 'InitError', 'Failed', get_localized_text(safe_locale, 'default_error'), safe_locale)  # Returns error response
 
-    invocation_source = event.get('invocationSource')
-    session_state = event.get('sessionState', {})
-    intent_data = session_state.get('intent', {})
-    intent_name = intent_data.get('name')
-    slots = intent_data.get('slots', {})
-    session_attributes = session_state.get('sessionAttributes', {})
-    locale = event.get('bot', {}).get('localeId', 'en-US')
-    logger.info(f"Source: {invocation_source}, Intent: {intent_name}, Locale: {locale}")
+    invocation_source = event.get('invocationSource')  # Gets invocation source
+    session_state = event.get('sessionState', {})  # Gets session state
+    intent_data = session_state.get('intent', {})  # Gets intent data
+    intent_name = intent_data.get('name')  # Gets intent name
+    slots = intent_data.get('slots', {})  # Gets slots
+    session_attributes = session_state.get('sessionAttributes', {})  # Gets session attributes
+    locale = event.get('bot', {}).get('localeId', 'en-US')  # Gets locale
+    logger.info(f"Source: {invocation_source}, Intent: {intent_name}, Locale: {locale}")  # Logs key details
 
     try:
         response = None
         # --- Route based on Invocation Source ---
         if invocation_source == 'DialogCodeHook':
-            logger.info(f"Processing DialogCodeHook for intent: {intent_name}") # Changed from debug
-            should_delegate = True
+            logger.info(f"Processing DialogCodeHook for intent: {intent_name}")  # Logs DialogCodeHook
+            should_delegate = True  # Initializes delegation flag
 
             # --- Date Validation Logic ---
             if intent_name in ['CheckBalance', 'FollowupCheckBalance'] and slots and 'dateOfBirth' in slots and slots['dateOfBirth'] and slots['dateOfBirth'].get('value'):
-                 dob_slot = slots['dateOfBirth']; original_value = dob_slot['value'].get('originalValue'); interpreted_value = dob_slot['value'].get('interpretedValue'); logger.info(f"Validating DoB: Orig='{original_value}', Interp='{interpreted_value}'")
-                 is_orig_plausible = isinstance(original_value, str) and len(original_value) >= 8 and original_value.count('-') >= 2; is_interp_valid = is_valid_iso_date(interpreted_value);
-                 if not is_orig_plausible or not is_interp_valid:
-                      logger.warning(f"Validation Failed DoB. Re-eliciting."); elicit_message = get_localized_text(locale, 'ask_dob');
-                      response = elicit_slot(session_attributes, intent_name, slots, 'dateOfBirth', elicit_message, locale)
-                      should_delegate = False
-                 else:
-                      logger.info("Date validation Passed.") # Allows to proceed to next logic or delegate
+                dob_slot = slots['dateOfBirth']  # Gets dateOfBirth slot
+                original_value = dob_slot['value'].get('originalValue')  # Gets original user input
+                interpreted_value = dob_slot['value'].get('interpretedValue')  # Gets interpreted value
+                logger.info(f"Validating DoB: Orig='{original_value}', Interp='{interpreted_value}'")  # Logs validation
+                is_orig_plausible = isinstance(original_value, str) and len(original_value) >= 8 and original_value.count('-') >= 2  # Checks if original input is plausible
+                is_interp_valid = is_valid_iso_date(interpreted_value)  # Validates interpreted date
+                if not is_orig_plausible or not is_interp_valid:
+                    logger.warning(f"Validation Failed DoB. Re-eliciting.")  # Logs validation failure
+                    elicit_message = get_localized_text(locale, 'ask_dob')  # Gets DOB elicitation message
+                    response = elicit_slot(session_attributes, intent_name, slots, 'dateOfBirth', elicit_message, locale)  # Elicits DOB slot
+                    should_delegate = False  # Prevents delegation
+                else:
+                    logger.info("Date validation Passed.")  # Logs successful validation
 
             # --- Custom MakeTransfer Confirmation Logic ---
             # Only if not handled by date validation re-prompt
             if should_delegate and intent_name == 'MakeTransfer':
-                 # Check if ALL required transfer slots have values (meaning Lex just collected the last one)
-                 if all(slots.get(s) and slots[s].get('value') for s in ['amount', 'sourceAccount', 'destinationAccount']):
-                      logger.info("MakeTransfer slots filled. Asking custom confirmation.")
-                      amount_str = slots['amount']['value']['interpretedValue']
-                      src_res = slots['sourceAccount']['value']['interpretedValue']
-                      dst_res = slots['destinationAccount']['value']['interpretedValue']
-                      # Map and format for the confirmation prompt
-                      display_source = src_res; display_destination = dst_res
-                      if locale == 'ja_JP':
-                          display_source = JA_ACCOUNT_MAP.get(src_res, src_res); display_destination = JA_ACCOUNT_MAP.get(dst_res, dst_res);
-                      try: amount_fmt = f"{int(decimal.Decimal(amount_str)):,}" if locale == 'ja_JP' else f"{decimal.Decimal(amount_str):,.2f}";
-                      except: amount_fmt = amount_str # Fallback
-                      conf_msg = get_localized_text(locale, 'transfer_confirmation_custom', amount=amount_fmt, source_account=display_source, destination_account=display_destination)
-                      response = confirm_intent(session_attributes, intent_name, slots, conf_msg, locale)
-                      should_delegate = False # We handled this by asking for confirmation
+                # Check if ALL required transfer slots have values (meaning Lex just collected the last one)
+                if all(slots.get(s) and slots[s].get('value') for s in ['amount', 'sourceAccount', 'destinationAccount']):
+                    logger.info("MakeTransfer slots filled. Asking custom confirmation.")  # Logs confirmation trigger
+                    amount_str = slots['amount']['value']['interpretedValue']  # Gets amount
+                    src_res = slots['sourceAccount']['value']['interpretedValue']  # Gets source account
+                    dst_res = slots['destinationAccount']['value']['interpretedValue']  # Gets destination account
+                    # Map and format for the confirmation prompt
+                    display_source = src_res  # Sets display source
+                    display_destination = dst_res  # Sets display destination
+                    if locale == 'ja_JP':
+                        display_source = JA_ACCOUNT_MAP.get(src_res, src_res)  # Maps source to Japanese
+                        display_destination = JA_ACCOUNT_MAP.get(dst_res, dst_res)  # Maps destination to Japanese
+                    try:
+                        amount_fmt = f"{int(decimal.Decimal(amount_str)):,}" if locale == 'ja_JP' else f"{decimal.Decimal(amount_str):,.2f}"  # Formats amount
+                    except:
+                        amount_fmt = amount_str  # Fallback for formatting errors
+                    conf_msg = get_localized_text(locale, 'transfer_confirmation_custom', amount=amount_fmt, source_account=display_source, destination_account=display_destination)  # Gets confirmation message
+                    response = confirm_intent(session_attributes, intent_name, slots, conf_msg, locale)  # Requests confirmation
+                    should_delegate = False  # Prevents delegation
 
             # If no specific action (validation failure or confirmation prompt) was taken by this point, delegate.
             if should_delegate:
-                logger.info(f"No specific Dialog action taken for {intent_name}. Delegating.")
-                response = delegate(session_attributes, intent_name, slots)
+                logger.info(f"No specific Dialog action taken for {intent_name}. Delegating.")  # Logs delegation
+                response = delegate(session_attributes, intent_name, slots)  # Delegates to Lex
 
         elif invocation_source == 'FulfillmentCodeHook':
-            logger.info(f"Processing FulfillmentCodeHook for intent: {intent_name}")
-            response = dispatch_fulfillment(event) # Call the fulfillment dispatcher
+            logger.info(f"Processing FulfillmentCodeHook for intent: {intent_name}")  # Logs FulfillmentCodeHook
+            response = dispatch_fulfillment(event)  # Dispatches to fulfillment handler
 
-        else: # Handle unknown invocation source
-            logger.error(f"Unknown invocationSource: {invocation_source}")
-            response = close(session_attributes, intent_name or 'ErrorIntent', 'Failed', get_localized_text(locale, 'default_error'), locale)
+        else:  # Handle unknown invocation source
+            logger.error(f"Unknown invocationSource: {invocation_source}")  # Logs error
+            response = close(session_attributes, intent_name or 'ErrorIntent', 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
 
-    except Exception as e: # Catch all other errors
-        logger.error(f"Exception during {invocation_source or 'Unknown'} processing for intent {intent_name}: {e}", exc_info=True)
-        response = close(session_attributes, intent_name or 'ErrorIntent', 'Failed', get_localized_text(locale, 'default_error'), locale)
+    except Exception as e:  # Catch all other errors
+        logger.error(f"Exception during {invocation_source or 'Unknown'} processing for intent {intent_name}: {e}", exc_info=True)  # Logs exception
+        response = close(session_attributes, intent_name or 'ErrorIntent', 'Failed', get_localized_text(locale, 'default_error'), locale)  # Returns error response
 
-    logger.info(f"Lambda Final Response Sent: {json.dumps(response)}")
+    logger.info(f"Lambda Final Response Sent: {json.dumps(response)}")  # Logs final response
     return response
 # --- End Complete FINAL Lambda Code ---
 
