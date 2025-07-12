@@ -1,6 +1,6 @@
 # Pydantic Tutorial
 
-Welcome to this dedicated "Markdown Window" for the Pydantic tutorial. This is a self-contained Markdown document you can copy-paste directly into GitHub (e.g., as `pydantic-tutorial.md` in a new repo). It will render with headings, lists, and syntax-highlighted code blocks for easy reading and execution. If you need modifications or more sections, let me know!
+Welcome to this document, It will render with headings, lists, and syntax-highlighted code blocks for easy reading and execution. If you need modifications or more sections, let me know!
 
 ## Introduction to Pydantic
 Pydantic is a Python library for data validation, parsing, and serialization using type hints. It's fast, flexible, and integrates well with tools like FastAPI.
