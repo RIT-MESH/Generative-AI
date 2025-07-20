@@ -1,7 +1,4 @@
-# Contributions to Logic and Set Theory
-
-This briefing document synthesizes information from three sources, focusing on different text splitting methodologies and the significant mathematical and philosophical contributions of Kurt Gödel.
-
+This briefing document synthesizes information from three sources, focusing on different text splitting methodologies
 ## Part 1: Text Splitting Methodologies
 
 This section reviews various approaches to splitting text, highlighting their mechanisms and how chunk size is determined.
